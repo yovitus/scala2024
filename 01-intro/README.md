@@ -25,7 +25,9 @@ directory).
 The following command will run the project. The -M option is only
 needed if there is more than one main method in the project.
 
+```
 scala-cli run . -M adpro.intro.printAbs
+```
 
 More info at: https://scala-cli.virtuslab.org/docs/overview/
 
