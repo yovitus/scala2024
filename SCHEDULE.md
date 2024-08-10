@@ -16,5 +16,5 @@ cwk ywk date  topic (reading) lecturer
 12. 47  22/11 Reinforcement Learning Example (mini project, 2 weeks)  AW
 13. 48  29/11 Reinforcement Learning Example (mini project, 2 weeks, no lectures) AW
 14. 49  06/12 Lenses (papers, see reading list) AW
---.  -- 06/01 written exam at 9am, for 4-6 hours
+--. --  06/01 written exam at 9am, for 4-6 hours
 ```
