@@ -4,6 +4,7 @@
 package adpro.adt
 
 import java.util.NoSuchElementException
+import scala.annotation.tailrec
 
 enum List[+A]:
   case Nil
@@ -33,36 +34,59 @@ object List:
     foldRight[A, List[B]] (l, Nil, (a, z) => Cons(f(a), z))
 
   // Exercise 1 (is to be solved without programming)
-
   // Exercise 2
 
-  def tail[A] (l: List[A]): List[A] = ???
-
+  def tail[A] (l: List[A]): List[A] = l match {
+    case Nil => throw new NoSuchElementException("tail of empty list")
+    case Cons(_, t) => t
+  }
   // Exercise 3
   
-  def drop[A] (l: List[A], n: Int): List[A] = ???
-
+  def drop[A](l: List[A], n: Int): List[A] = (l, n) match {
+    case (Nil, _) if n > 0 => throw new NoSuchElementException("list is too short")
+    case (l, n) if n <= 0 => l
+    case (Cons(_, t), n) => drop(t, n - 1)
+    case (Nil, _) => ???
+  }
   // Exercise 4
-
-  def dropWhile[A] (l: List[A], p: A => Boolean): List[A] = ???
-
+  
+  def dropWhile[A] (l: List[A], p: A => Boolean): List[A] = l match {
+    case Cons(h, t) if p(h) => dropWhile(t, p) // If the head satisfies p, drop it and continue
+    case _ => l
+  }
+  
   // Exercise 5
  
-  def init[A] (l: List[A]): List[A] = ???
-
+  def init[A] (l: List[A]): List[A] = l match {
+    case Nil => throw new NoSuchElementException("init of empty list")
+    case Cons(_, Nil) => Nil
+    case Cons(h, t) => Cons(h, init(t)) // Recur on the tail until the last element is found
+  }
+  // This function will not run in constant time, as we need to traverse the list to remove the last element
+  // It does not take constant space either, since the function has to return a new list,
+  // excluding the last element, which requires a new list to be constructed.
+  
   // Exercise 6
 
-  def length[A] (l: List[A]): Int = ???
+  def length[A](l: List[A]): Int = 
+    foldRight(l, 0, (a: A, acc: Int) => acc + 1)
 
   // Exercise 7
 
-  def foldLeft[A, B] (l: List[A], z: B, f: (B, A) => B): B = ???
+// Tail-recursive foldLeft function provided by you
+  def foldLeft[A, B](l: List[A], z: B)(f: (B, A) => B): B = {
+    @annotation.tailrec
+    def loop(lst: List[A], acc: B): B = lst match {
+      case Nil => acc
+      case Cons(h, t) => loop(t, f(acc, h))
+    }
+    loop(l, z)
+  }
 
   // Exercise 8
+  def product(l: List[Int]): Int = foldLeft(l, 1)(_ * _)
 
-  def product (as: List[Int]): Int = ???
-
-  def length1[A] (as: List[A]): Int = ???
+  def length1[A](l: List[A]): Int = foldLeft(l, 0)((acc, _) => acc + 1)
 
   // Exercise 9
 

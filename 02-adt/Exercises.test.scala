@@ -47,7 +47,6 @@ object ExercisesSpec
     
   // Exercise 1 requires no programming
 
-
   
   // Exercise 2 (tail)
 
