@@ -5,12 +5,12 @@ package adpro.option
 
 // Exercise 1
 
-trait OrderedPoint 
+trait OrderedPoint
   extends scala.math.Ordered[java.awt.Point]:
 
   this: java.awt.Point =>
 
-  override def compare(that: java.awt.Point): Int = 
+  override def compare(that: java.awt.Point): Int =
     ???
 
 // Try the following (and similar) tests in the repl (sbt console):
@@ -67,8 +67,6 @@ enum Option[+A]:
 
   def flatMap[B](f: A => Option[B]): Option[B] =  ???
 
-  def orElse[B >: A](ob: => Option[B]): Option[B] = ???
-
   def filter(p: A => Boolean): Option[A] = ???
 
   // Scroll down for Exercise 7, in the bottom of the file, outside Option
@@ -76,7 +74,7 @@ enum Option[+A]:
   def forAll(p: A => Boolean): Boolean = this match
     case None => true
     case Some(a) => p(a)
-    
+
 
 
 
@@ -96,10 +94,10 @@ object Option:
 
   def traverse[A, B](as: List[A])(f: A => Option[B]): Option[List[B]] =
     ???
-    
+
 end Option
 
- 
+
 
 // Exercise that are outside the Option companion object
 
@@ -127,5 +125,5 @@ def mean(xs: Seq[Double]): Option[Double] =
 
 def variance(xs: Seq[Double]): Option[Double] =
   ???
- 
+
 // Scroll up, to the Option object for Exercise 9
