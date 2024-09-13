@@ -11,7 +11,13 @@ trait OrderedPoint
   this: java.awt.Point =>
 
   override def compare(that: java.awt.Point): Int = 
-    ???
+    if (this.x < that.x) -1
+    else if (this.x > that.x) 1
+    else if (this.y < that.y) -1
+    else if (this.y > that.y) 1
+    else 0
+
+
 
 // Try the following (and similar) tests in the repl (sbt console):
 //
@@ -28,31 +34,49 @@ enum Tree[+A]:
   case Leaf(value: A)
   case Branch(left: Tree[A], right: Tree[A])
 
+import scala.math.Numeric.Implicits.infixNumericOps
+
 object Tree:
 
   // Exercise 2
 
-  def size[A](t: Tree[A]): Int = ???
+  def size[A](t: Tree[A]): Int =
+    def go(t: Tree[A]): Int = t match
+      case Leaf(_) => 1
+      case Branch(l, r) => go(l) + go(r) + 1
+    go(t)
+    
 
   // Exercise 3
 
-  def maximum(t: Tree[Int]): Int = ???
+  def maximum(t: Tree[Int]): Int =
+    def go(t: Tree[Int]): Int = t match
+      case Leaf(v) => v
+      case Branch(l, r) => go(l) max go(r)
+    go(t)
 
   // Exercise 4
 
-  def map[A, B](t: Tree[A])(f: A => B): Tree[B] = ???
+  def map[A, B](t: Tree[A])(f: A => B): Tree[B] = t match
+    case Leaf(v) => Leaf(f(v))
+    case Branch(l, r) => Branch(map(l)(f), map(r)(f))
+  
 
   // Exercise 5
 
-  def fold[A,B](t: Tree[A])(f: (B, B) => B)(g: A => B): B = ???
+  def fold[A,B](t: Tree[A])(f: (B, B) => B)(g: A => B): B = t match
+    case Tree.Leaf(v) => g(v)
+    case Tree.Branch(l, r) => f(fold(l)(f)(g), fold(r)(f)(g))
 
-  def size1[A](t: Tree[A]): Int =  ???
+  def size1[A](t: Tree[A]): Int = 
+    fold[A, Int](t)((l: Int, r: Int) => l + r + 1)(_ => 1)
+  
+  def maximum1(t: Tree[Int]): Int =
+    fold[Int, Int](t)(_ max _)(identity)
 
-  def maximum1(t: Tree[Int]): Int = ???
 
-  def map1[A, B](t: Tree[A])(f: A => B): Tree[B] = ???
-
-
+  def map1[A, B](t: Tree[A])(f: A => B): Tree[B] =
+    fold[A, Tree[B]](t)(Branch(_,_))((a: A) => Leaf(f(a)))
 
 
 enum Option[+A]:
@@ -61,15 +85,26 @@ enum Option[+A]:
 
   // Exercise 6
 
-  def map[B](f: A => B): Option[B] = ???
+  def map[B](f: A => B): Option[B] = this match
+    case Some(value) => Some(f(value))
+    case None => None 
 
-  def getOrElse[B >: A] (default: => B): B = ???
+  def getOrElse[B >: A] (default: => B): B = this match
+    case Some(value) => value
+    case None => default
 
-  def flatMap[B](f: A => Option[B]): Option[B] =  ???
+  def flatMap[B](f: A => Option[B]): Option[B] = this match
+    case Some(value) => f(value)
+    case None => None
 
-  def orElse[B >: A](ob: => Option[B]): Option[B] = ???
+  def orElse[B >: A](ob: => Option[B]): Option[B] = this match
+    case Some(value) => Some(value)
+    case None => ob
+  
 
-  def filter(p: A => Boolean): Option[A] = ???
+  def filter(p: A => Boolean): Option[A] = this match
+    case Some(value) if p(value) => Some(value)
+    case _ => None
 
   // Scroll down for Exercise 7, in the bottom of the file, outside Option
 
