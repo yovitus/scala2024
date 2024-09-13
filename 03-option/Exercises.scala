@@ -120,17 +120,17 @@ object Option:
   // Exercise 9
 
   def map2[A, B, C](ao: Option[A], bo: Option[B])(f: (A,B) => C): Option[C] =
-    ???
+    ao.flatMap(a => bo.map(b => f(a,b)))
 
   // Exercise 10
 
   def sequence[A](aos: List[Option[A]]): Option[List[A]] =
-    ???
+    aos.foldRight[Option[List[A]]](Some(Nil))((a, b) => map2(a, b)(_ :: _))
 
   // Exercise 11
 
   def traverse[A, B](as: List[A])(f: A => Option[B]): Option[List[B]] =
-    ???
+    as.foldRight[Option[List[B]]](Some(Nil))((a, b) => map2(f(a), b)(_ :: _))
     
 end Option
 
@@ -146,11 +146,14 @@ def headOption[A](lst: List[A]): Option[A] = lst match
 
 // Exercise 7
 
-def headGrade(lst: List[(String,Int)]): Option[Int] =
-  ???
+def headGrade(lst: List[(String, Int)]): Option[Int] =
+  headOption(lst).map(_._2)
 
-def headGrade1(lst: List[(String,Int)]): Option[Int] =
-  ???
+def headGrade1(lst: List[(String, Int)]): Option[Int] =
+  for
+    head <- headOption(lst)
+  yield head._2  
+  
 
 // Implemented in the text book
 
@@ -159,8 +162,13 @@ def mean(xs: Seq[Double]): Option[Double] =
   else Some(xs.sum / xs.length)
 
 // Exercise 8
+// def variance(xs: Seq[Double]): Option[Double] =
+//   mean(xs).flatMap(m => mean(xs.map(x => math.pow(x - m, 2))))
 
 def variance(xs: Seq[Double]): Option[Double] =
-  ???
- 
+  for
+    m <- mean(xs)
+    v <- mean(xs.map(x => math.pow(x - m, 2)))
+  yield v
+
 // Scroll up, to the Option object for Exercise 9
