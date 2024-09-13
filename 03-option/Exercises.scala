@@ -15,7 +15,7 @@ trait OrderedPoint
 
 // Try the following (and similar) tests in the repl (sbt console):
 //
-// import adpro._
+// import adpro.option.*
 // val p = new java.awt.Point(0, 1) with OrderedPoint
 // val q = new java.awt.Point(0, 2) with OrderedPoint
 // assert(p < q)
