@@ -98,23 +98,23 @@ enum LazyList[+A]:
 
   // Exercise 5
   
-  def forAll(p: A => Boolean): Boolean =
-    ???
-
-
+  def forAll(p: A => Boolean): Boolean = this match
+    case Empty => true
+    case Cons(h, t) => p(h()) && t().forAll(p)
   
- 
+  
   // Note 1. lazy; tail is never forced if satisfying element found this is
   // because || is non-strict
   // Note 2. this is also tail recursive (because of the special semantics
   // of ||)
-  def exists(p: A => Boolean): Boolean = 
-    ???
-
+  def exists(p: A => Boolean): Boolean = this match
+    case Empty => false
+    case Cons(h, t) => p(h()) || t().exists(p)
+  
   // Exercise 6
   
   def takeWhile1(p: A => Boolean): LazyList[A] =
-    ???
+    foldRight(empty[A])((h,t) => if p(h) then cons(h,t) else empty)
 
   // Exercise 7
   
