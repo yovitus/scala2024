@@ -59,34 +59,50 @@ enum LazyList[+A]:
 
   // Note: Do you know why we can implement find with filter for lazy lists but
   // would not do that for regular lists?
-  def find(p: A => Boolean) = 
-    this.filter(p).headOption
 
   // Exercise 2
 
-  def toList: List[A] = 
-    ???
-
+  def toList: List[A] = this match
+    case Empty => Nil
+    case Cons(h,t) => h() :: t().toList
+  
   // Test in the REPL, for instance: LazyList(1,2,3).toList 
   // (and see what list is constructed)
 
   // Exercise 3
 
-  def take(n: Int): LazyList[A] = 
-    ???
+  def take(n: Int): LazyList[A] = this match
+    case Empty => Empty
+    case Cons(_, _) if n <= 0 => Empty
+    case Cons(h, t) => Cons(h, () => t().take(n-1))
 
-  def drop(n: Int): LazyList[A] = 
-    ???
+
+  def drop(n: Int): LazyList[A] = this match
+    case Empty => Empty
+    case Cons(_ , _) if n == 0 => this
+    case Cons(_, t) => t().drop(n-1)
+  
 
   // Exercise 4
 
-  def takeWhile(p: A => Boolean): LazyList[A] = 
-    ???
+  def takeWhile(p: A => Boolean): LazyList[A] = this match
+    case Empty => Empty
+    case Cons(h, t) if p(h()) => Cons(h, () => t().takeWhile(p))
+    case Cons(_, _) => Empty
+
+  // naturals.takeWhile { _ < 1000000000 }.drop(100).take(50).toList
+  // This terminates fast with no exceptions because
+  // the lazy nature of the LazyList means that operations only compute
+  // as many elements as needed. drop(100) and take(50) limit the amount of evaluation needed,
+  // making this computation terminate quickly.
 
   // Exercise 5
   
   def forAll(p: A => Boolean): Boolean =
     ???
+
+
+  
  
   // Note 1. lazy; tail is never forced if satisfying element found this is
   // because || is non-strict
@@ -178,13 +194,13 @@ object LazyList:
   // Exercise 1
 
   def from(n: Int): LazyList[Int] =
-    ???
+    cons(n, from(n+1))
 
-  def to(n: Int): LazyList[Int] =
-    ???
+  def to(n: Int): LazyList[Int] = 
+    cons(n, to(n-1))
 
   lazy val naturals: LazyList[Int] =
-    ???
+    from(1)
 
   // Scroll up to Exercise 2 to the enum LazyList definition 
   
