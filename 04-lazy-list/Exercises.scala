@@ -119,17 +119,17 @@ enum LazyList[+A]:
   // Exercise 7
   
   def headOption1: Option[A] = 
-    ???
+    foldRight(None: Option[A])((h, _) => Some(h))
 
   // Exercise 8
   
   // Note: The type is incorrect, you need to fix it
-  def map(f: Any): LazyList[Int] = 
-    ???
+  def map[B](f: A => B): LazyList[B] =
+    foldRight(LazyList.empty[B])((h, t) => LazyList.cons(f(h), t))
 
   // Note: The type is incorrect, you need to fix it
-  def filter(p: Any): LazyList[Any] = 
-    ???
+  def filter(p: A => Boolean): LazyList[A] =
+    foldRight(LazyList.empty[A])((h, t) => if (p(h)) LazyList.cons(h, t) else t)
 
   /* Note: The type is given correctly for append, because it is more complex.
    * Try to understand the type. The contsraint 'B >: A' requires that B is a
@@ -144,16 +144,27 @@ enum LazyList[+A]:
    * getOrElse last week, and the type of foldRight this week.
    */
   def append[B >: A](that: => LazyList[B]): LazyList[B] = 
-    ???
+    foldRight(that)((h, t) => cons(h, t))
 
   // Note: The type is incorrect, you need to fix it
-  def flatMap(f: Any): LazyList[Any] = 
-    ???
+  def flatMap[B](f: A=> LazyList[B]): LazyList[B] = 
+    foldRight(LazyList.empty[B])((h, t) => f(h).append(t))
 
   // Exercise 9
   // Type answer here
-  //
-  // ...
+ /*
+  * filter(p) traverses the LazyList and creates a new LazyList containing
+  * only elements that satisfy the predicate p. headOption returns
+  * the first element of this filtered LazyList or if the list is empty it returns None.
+  * It is efficient for LazyList because only the necessary elements are evaluated.
+  * Once the first element satisfying the predicate is found, the evaluation stops,
+  * avoiding unnecessary computations. The rest of the list remains unevaluated
+  * after finding the first match, making the function highly efficient for
+  * large or infinite lists aka Short-circuiting.
+  * It is not optimal for List because it traverses the entire list even if the first
+  * element satisfies the predicate. This is because List is strict and all elements
+  * are evaluated before the function can return the first element.
+  */
   //
   // Scroll down to Exercise 10 in the companion object below
 
@@ -207,8 +218,11 @@ object LazyList:
   // Exercise 10
 
   // Note: The type is incorrect, you need to fix it
-  lazy val fibs: Any = 
-    ???
+  lazy val fibs: LazyList[Int] = {
+    def go(a: Int, b: Int): LazyList[Int] =
+      LazyList.cons(a, go(b, a + b)) 
+    go(0, 1)
+  }
 
   // Exercise 11
 
