@@ -171,16 +171,29 @@ enum LazyList[+A]:
   // Exercise 13
 
   def mapUnfold[B](f: A => B): LazyList[B] =
-    ???
+    unfold(this) {
+      case Empty => None
+      case Cons(h, t) => Some((f(h()), t()))
+    }
 
   def takeUnfold(n: Int): LazyList[A] =
-    ???
+    unfold((this, n)) {
+      case (Cons(h, t), n) if n > 0 => Some((h(), (t(), n-1)))
+      case _ => None
+    }
+    
 
   def takeWhileUnfold(p: A => Boolean): LazyList[A] =
-    ???
+    unfold(this) {
+      case Cons(h, t) if p(h()) => Some((h(), t()))
+      case _ => None
+    }
 
   def zipWith[B >: A, C](ope: (=> B, => B) => C)(bs: LazyList[B]): LazyList[C] =
-    ???
+    unfold((this, bs)) {
+      case (Cons(h1, t1), Cons(h2, t2)) => Some((ope(h1(), h2()), (t1(), t2())))
+      case _ => None
+    }
 
 end LazyList // enum ADT
 
@@ -226,13 +239,15 @@ object LazyList:
 
   // Exercise 11
 
-  def unfold[A,S](z: S)(f: S => Option[(A, S)]): LazyList[A] =
-    ???
+  def unfold[A,S](z: S)(f: S => Option[(A, S)]): LazyList[A] = f(z) match
+      case None => LazyList.empty
+      case Some((a,s)) => LazyList.cons(a, unfold(s)(f))
 
   // Exercise 12
 
   // Note: The type is incorrect, you need to fix it
-  lazy val fibsUnfold: Any = ???
+  lazy val fibsUnfold: LazyList[Int] =
+    unfold((0,1)) { case (a,b) => Some((a,(b,a+b))) }
 
   // Scroll up for Exercise 13 to the enum
 
