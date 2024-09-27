@@ -1,3 +1,16 @@
+file://<HOME>/Documents/Datalogi/1.%20semester/Advanced%20Programming/Repo/2024-adpro-main/05-state/Exercises.scala
+### java.lang.IndexOutOfBoundsException: -1
+
+occurred in the presentation compiler.
+
+presentation compiler configuration:
+
+
+action parameters:
+offset: 1692
+uri: file://<HOME>/Documents/Datalogi/1.%20semester/Advanced%20Programming/Repo/2024-adpro-main/05-state/Exercises.scala
+text:
+```scala
 // Advanced Programming, A. Wąsowski, IT University of Copenhagen
 // Based on Functional Programming in Scala, 2nd Edition
 
@@ -50,20 +63,16 @@ object RNG:
 
 
   // The return type is broken and needs to be fixed
-  def doubleInt(rng: RNG): ((Double, Int), RNG) = 
-    val ((i, d), rng2) = intDouble(rng)
-    ((d, i), rng2)
+  def doubleInt(rng: RNG): Any = 
+    ???
 
   // Exercise 4
-
+  def flatMap[S, A, B](s: State[S, A])(f: A => State[S, B]): State[S, B] = 
+    State (@@)
   // The return type is broken and needs to be fixed
-  def ints(size: Int)(rng: RNG): (List[Int], RNG) = 
-    if size <= 0 then (List(), rng)
-    else 
-      val (i, rng2) = rng.nextInt
-      val (is, rng3) = ints(size - 1)(rng2)
-      (i :: is, rng3)
-  
+  def ints(size: Int)(rng: RNG): Any = 
+    ???
+
 
   type Rand[+A] = RNG => (A, RNG)
 
@@ -163,3 +172,23 @@ object State:
     ???
 
 end State
+
+```
+
+
+
+#### Error stacktrace:
+
+```
+scala.collection.LinearSeqOps.apply(LinearSeq.scala:129)
+	scala.collection.LinearSeqOps.apply$(LinearSeq.scala:128)
+	scala.collection.immutable.List.apply(List.scala:79)
+	dotty.tools.dotc.util.Signatures$.applyCallInfo(Signatures.scala:243)
+	dotty.tools.dotc.util.Signatures$.computeSignatureHelp(Signatures.scala:101)
+	dotty.tools.dotc.util.Signatures$.signatureHelp(Signatures.scala:88)
+	dotty.tools.pc.SignatureHelpProvider$.signatureHelp(SignatureHelpProvider.scala:53)
+	dotty.tools.pc.ScalaPresentationCompiler.signatureHelp$$anonfun$1(ScalaPresentationCompiler.scala:409)
+```
+#### Short summary: 
+
+java.lang.IndexOutOfBoundsException: -1
