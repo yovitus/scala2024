@@ -29,25 +29,33 @@ object RNG:
   // Exercise 1
 
   def nonNegativeInt(rng: RNG): (Int, RNG) =
-    ???
+    val (i, rng2) = rng.nextInt
+    val nonNegative = if i < 0 then -(i + 1) else i
+    (nonNegative, rng2)
 
   // Exercise 2
 
   def double(rng: RNG): (Double, RNG) = 
-    ???
+    val (i, rng2) = nonNegativeInt(rng)
+    val d = i / (Int.MaxValue.toDouble + 1)
+    (d, rng2)
 
   // Exercise 3
   
   // The return type is broken and needs to be fixed
-  def intDouble(rng: RNG): Any = 
-    ???
+  def intDouble(rng: RNG): ((Int, Double), RNG) = 
+    val (i, rng2) = rng.nextInt
+    val (d, rng3) = double(rng2)
+    ((i, d), rng3)
+
 
   // The return type is broken and needs to be fixed
   def doubleInt(rng: RNG): Any = 
     ???
 
   // Exercise 4
-
+  def flatMap[S, A, B](s: State[S, A])(f: A => State[S, B]): State[S, B] = 
+    State (K =>)
   // The return type is broken and needs to be fixed
   def ints(size: Int)(rng: RNG): Any = 
     ???
