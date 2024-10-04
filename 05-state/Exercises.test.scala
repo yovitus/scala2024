@@ -126,7 +126,7 @@ object RNGSpec
     forAll { (rng: RNG ) =>
       val intDoubleMap2 = map2(nonNegativeInt, double) { (_,_) }
       intDoubleMap2(rng) == intDouble(rng)
-    }
+    } 
 
   property("Ex06.02: map2 can emulate map") =
     forAll { (rng: RNG, f: ((Double, Int)) => Int) =>
