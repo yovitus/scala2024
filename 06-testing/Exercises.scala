@@ -107,7 +107,8 @@ for LazyList02:
   }
   
   // Exercise 7
-  property("Ex07: l.drop(n) does not force any of the dropped elements") = forAll(Gen.choose(0, 100)) { (n: Int) =>
+  property("Ex07: l.drop(n) does not force any of the dropped elements") = 
+    forAll(Gen.choose(0, 100)) { (n: Int) =>
     var forcedHeads = 0
     def makeList: LazyList[Int] = cons({ forcedHeads += 1; forcedHeads }, makeList)
     makeList.drop(n)
@@ -115,34 +116,41 @@ for LazyList02:
   }
 
   // Exercise 8
-  property("Ex08: l.map(identity) == l for any lazy list l") = forAll(genNonEmptyLazyList[Int]) { (l: LazyList[Int]) =>
+  property("Ex08: l.map(identity) == l for any lazy list l") = 
+    forAll(genNonEmptyLazyList[Int]) { (l: LazyList[Int]) =>
     l.map(identity).toList == l.toList
   }
 
   // Exercise 9
-  property("Ex09: Map terminates on infinite lists") = forAll(infiniteLazyList[Int]) { (l: LazyList[Int]) =>
+  property("Ex09: Map terminates on infinite lists") = 
+    forAll(infiniteLazyList[Int]) { (l: LazyList[Int]) =>
     l.map(identity)
     true
   }
  
   // Exercise 10
-  property("Ex10.01: append preserves length (length(l1.append(l2)) == length(l1) + length(l2))") = forAll(genNonEmptyLazyList[Int], genNonEmptyLazyList[Int]) { (l1, l2) =>
+  property("Ex10.01: append preserves length (length(l1.append(l2)) == length(l1) + length(l2))") = 
+    forAll(genNonEmptyLazyList[Int], genNonEmptyLazyList[Int]) { (l1, l2) =>
     l1.append(l2).toList.length == l1.toList.length + l2.toList.length
   }
 
-  property("Ex10.02: Left identity empty.append(l) == l") = forAll(genNonEmptyLazyList[Int]) { (l: LazyList[Int]) =>
+  property("Ex10.02: Left identity empty.append(l) == l") = 
+    forAll(genNonEmptyLazyList[Int]) { (l: LazyList[Int]) =>
     LazyList.empty.append(l).toList == l.toList
   }
 
-  property("Ex10.03: Right identity l.append(empty) == l") = forAll(genNonEmptyLazyList[Int]) { (l: LazyList[Int]) =>
+  property("Ex10.03: Right identity l.append(empty) == l") = 
+    forAll(genNonEmptyLazyList[Int]) { (l: LazyList[Int]) =>
     l.append(LazyList.empty).toList == l.toList
   }
 
-  property("Ex10.04: l1.append(l2) preserves element order") = forAll(genNonEmptyLazyList[Int], genNonEmptyLazyList[Int]) { (l1, l2) =>
+  property("Ex10.04: l1.append(l2) preserves element order") = 
+    forAll(genNonEmptyLazyList[Int], genNonEmptyLazyList[Int]) { (l1, l2) =>
     l1.append(l2).toList == l1.toList ++ l2.toList
   }
 
-  property("Ex10.05: append terminates when appending a finite list to an infinite list") = forAll(genNonEmptyLazyList[Int]) { (l: LazyList[Int]) =>
+  property("Ex10.05: append terminates when appending a finite list to an infinite list") = 
+    forAll(genNonEmptyLazyList[Int]) { (l: LazyList[Int]) =>
     val infiniteList = LazyList.from(1)
     val appendedList = infiniteList.append(l).take(100).toList
     appendedList.length == 100
