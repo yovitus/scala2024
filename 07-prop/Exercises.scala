@@ -9,12 +9,13 @@ val TODO = 42
 
 // Exercise 1
 
-lazy val rng1: RNG = ???
+lazy val rng1: RNG = RNG.Simple(42)
+
 
 // Exercise 2
 
-lazy val (x, rng2): (Int, RNG) = ???
-lazy val y = ???
+lazy val (x, rng2): (Int, RNG) = rng1.nextInt
+lazy val y = rng2.nextInt._1
 
 // Exercise 3
 
@@ -31,10 +32,16 @@ object Exercise_3:
   // allow the teachers to test them with different mutants of `minimum`.
   
   def p1Min (minimum: List[Int] => Int): org.scalacheck.Prop = 
-    ??? 
+     org.scalacheck.Prop.forAll(intList) { l => 
+      val min = minimum(l)
+      l.forall(_ >= min)  
+    }
 
   def p2Min (minimum: List[Int] => Int): org.scalacheck.Prop = 
-    ???
+    org.scalacheck.Prop.forAllNoShrink(intList) { l => 
+      val min = minimum(l)
+      l.exists(_ == min)  
+    }
 
 end Exercise_3
 
@@ -48,7 +55,8 @@ object Exercise_4:
     def check: Boolean
 
     infix def && (that: Prop): Prop =
-      ???
+      new Prop:
+        def check = self.check && that.check
 
 end Exercise_4
 
@@ -62,37 +70,63 @@ object Gen:
       LazyList.unfold[A,RNG](rng)(rng => Some(g.run(rng)))
 
   // Exercise 5
-  def choose (start: Int, stopExclusive: Int): Gen[Int] =
-    ???
+  def choose(start: Int, stopExclusive: Int): Gen[Int] =
+    State { rng =>
+      val (i, rng2) = rng.nextInt
+      val i2 = start + (i & Int.MaxValue) % (stopExclusive - start)
+      (i2, rng2)
+    }
 
   // Exercise 6
 
-  def unit[A] (a: =>A): Gen[A] = 
-    ???
+  def unit[A] (a: =>A): Gen[A] =  
+    State.unit(a)
 
   def boolean: Gen[Boolean] = 
-    ???
+    State { rng =>
+      val (i, nextRng) = rng.nextInt
+      (i % 2 == 0, nextRng)
+    }
+
 
   def double: Gen[Double] = 
-    ???
+    State { rng =>
+      val (i, nextRng) = rng.nextInt
+      val d = i.toDouble / Int.MaxValue
+      (i.toDouble / Int.MaxValue, nextRng)
+    }
+    
 
   // Exercise 7
   
   extension [A](self: Gen[A])
-
-    def listOfN(n: Int): Gen[List[A]] =
-      ???
+    def listOfN(n: Int): Gen[List[A]] = 
+      State { rng =>
+        def go(count: Int, r: RNG, acc: List[A]): (List[A], RNG) = {
+          if (count <= 0) (acc, r)
+          else {
+            val (a, r2) = self.run(r)
+            go(count - 1, r2, a :: acc)
+          }
+        }
+        go(n, rng, List.empty[A])
+      }
 
   // Exercise 8
  
-  // Write here ... ???
+  // listOfN method was implemented as an extension method of Gen[A], was to leverage Scala's
+  // extension methods feature, which allows adding new methods to existing types
+  // withput modifying their original definitions. 
   
   // Exercise 9
 
   extension [A](self: Gen[A])
 
     def flatMap[B](f: A => Gen[B]): Gen[B] =
-      ???
+      State { rng =>
+        val (a, rng2) = self.run(rng)
+        f(a).run(rng2)
+      }
 
     // It will be convenient to also have map (uses flatMap)
     def map[B](f: A => B): Gen[B] = 
@@ -103,14 +137,13 @@ object Gen:
 
   extension [A](self: Gen[A])
     def listOf(size: Gen[Int]): Gen[List[A]] =
-      ???
-
+      size.flatMap { n => self.listOfN(n) }
 
   // Exercise 11
 
   extension [A](self: Gen[A])
     def union (that: Gen[A]): Gen[A] =
-      ???
+      boolean.flatMap { b => if b then self else that }
 
 end Gen
 
@@ -124,19 +157,18 @@ object Exercise_12:
   // listOf are tested (so rename if you use another than the first)
 
   def listOfN[A: Gen](n: Int): Gen[List[A]] =
-    ???
+    summon[Gen[A]].listOfN(n)
   
   def listOfN_[A: Gen]: Int => Gen[List[A]] =
     ???
   
   def listOfN__ [A](n: Int)(using genA: Gen[A]): Gen[List[A]] =
     ???
-
   // Choose one of the following templates, but note only listOfN and
   // listOf are tested (so rename if you use another than the first)
   
   def listOf[A: Gen](using genInt: Gen[Int]): Gen[List[A]] =
-    ???
+    summon[Gen[A]].listOf(genInt)
   
   def listOf_[A] (using genInt: Gen[Int], genA: Gen[A]): Gen[List[A]] =
     ???
@@ -191,10 +223,14 @@ def forAllNotSized[A] = forAll[A]
   
 extension (self: Prop)
   infix def && (that: Prop): Prop = (maxSize, tcs, rng) => 
-    ???
+    self(maxSize, tcs, rng) match
+      case Passed => that(maxSize, tcs, rng)
+      case x => x
   
   infix def || (that: Prop): Prop = (maxSize, tcs, rng) =>
-    ???
+    self(maxSize, tcs, rng) match
+      case Passed => Passed
+      case _ => that(maxSize, tcs, rng)
 
 
 // Exercise 14
@@ -203,14 +239,14 @@ extension (self: Prop)
 opaque type SGen[+A] = Int => Gen[A]
 
 extension [A](self: Gen[A])
-  def unsized: SGen[A] =
-    ???
+  def unsized: SGen[A] = _ => self
+
 
 // Exercise 15
 
 extension [A](self: Gen[A]) 
-  def list: SGen[List[A]] =
-    ???
+  def list: SGen[List[A]] = 
+    n => self.listOfN(n)
 
 // A sized implementation of prop, takes MaxSize to generate
 // test cases of given size.  
@@ -265,10 +301,16 @@ object Exercise_16:
   // allow the teachers to test them with different mutants of `minimum`.
   
   def p1Min(minimum: List[Int] => Int): Prop = 
-    ???
-  
+    Prop.forAll(nonEmptyList) { list =>
+      val min = minimum(list)
+      list.forall(_ >= min)
+    }
+
   def p2Min(minimum: List[Int] => Int): Prop = 
-    ???
+    Prop.forAll(nonEmptyList) { list =>
+      val min = minimum(list)
+      list.contains(min)
+    }
 
 end Exercise_16
 
