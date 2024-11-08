@@ -1,3 +1,16 @@
+file://<HOME>/Documents/Datalogi/1.%20semester/Advanced%20Programming/Repo/2024-adpro-main/10-prob/Exercises.scala
+### java.lang.IndexOutOfBoundsException: -1
+
+occurred in the presentation compiler.
+
+presentation compiler configuration:
+
+
+action parameters:
+offset: 8230
+uri: file://<HOME>/Documents/Datalogi/1.%20semester/Advanced%20Programming/Repo/2024-adpro-main/10-prob/Exercises.scala
+text:
+```scala
 // Advanced Programming, Andrzej Wasowski
 // Probabilistic Programming (AKA Probability is also a monad)
 package adpro.prob
@@ -228,7 +241,7 @@ val UpperBound = 6
 // Pigaro.uniform[A](name: String)(a : A*) :Element[A]
 
 lazy val blackBallsNo: Dist[Int] =
-  Pigaro.uniform("blackBallsNo")((0 to (UpperBound - 1))*)
+  Pigaro.uniform("blackBallsNo")(@@)
 
 // Now convert the prior distribution on the initial number of black balls in
 // the urn, into a distribution over the winning player.  Since the game is
@@ -238,12 +251,12 @@ lazy val blackBallsNo: Dist[Int] =
 // There is no test for this step of the computation.
 
 def outcome: Dist[(Int, Player)] = 
-  blackBallsNo.flatMap { n => move(Paula, n).map { p => (n, p) } }
+  ???
 
 // The following asserts that Paula has won.
 
 lazy val paulaWon: Dist[(Int, Player)] = 
-  outcome.matching { case (_, Paula) => }
+  ???
 
 // Now define the posterior probabilities for all size of the urn from 1 to
 // UpperBound. You can do this using IData.pr.
@@ -254,7 +267,7 @@ lazy val paulaWon: Dist[(Int, Player)] =
 // IData[T].prMatching  { case ... => }
 
 lazy val posteriorOdd: Double =
-  paulaWon.sample(4000).prMatching { case (n, _) => n % 2 == 1 }
+  ???
 
 // Is the posteriorOdd greater than 1/2? Why?
 //
@@ -264,3 +277,23 @@ lazy val posteriorOdd: Double =
 // Reflect whether the above estimation would take you more time analytically
 // or with a probabilistic programming library?
 
+
+```
+
+
+
+#### Error stacktrace:
+
+```
+scala.collection.LinearSeqOps.apply(LinearSeq.scala:129)
+	scala.collection.LinearSeqOps.apply$(LinearSeq.scala:128)
+	scala.collection.immutable.List.apply(List.scala:79)
+	dotty.tools.dotc.util.Signatures$.applyCallInfo(Signatures.scala:243)
+	dotty.tools.dotc.util.Signatures$.computeSignatureHelp(Signatures.scala:101)
+	dotty.tools.dotc.util.Signatures$.signatureHelp(Signatures.scala:88)
+	dotty.tools.pc.SignatureHelpProvider$.signatureHelp(SignatureHelpProvider.scala:53)
+	dotty.tools.pc.ScalaPresentationCompiler.signatureHelp$$anonfun$1(ScalaPresentationCompiler.scala:409)
+```
+#### Short summary: 
+
+java.lang.IndexOutOfBoundsException: -1
