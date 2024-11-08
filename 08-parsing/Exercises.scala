@@ -99,6 +99,7 @@ trait Parsers[ParseError, Parser[+_]]:
     // many laws
 
     def manyString =
+
       forAll { (s: String, n: Int) =>
         (s.size > 0 && !s.contains('x')) ==> {
           val k = (n % 100).abs
@@ -130,34 +131,42 @@ trait Parsers[ParseError, Parser[+_]]:
     // listOfN laws
 
     def listOfN1 =
+
       (string("ab")|string("cad")).listOfN(3).run("ababcad") 
         == Right(List("ab", "ab", "cad"))
    
     def listOfN2 =
+
       (string("ab")|string("cad")).listOfN(3).run("cadabab") 
         == Right(List("cad", "ab", "ab"))
    
     def listOfN3 =
+
       (string("ab")|string("cad")).listOfN(3).run("ababab")
         == Right(List("ab", "ab", "ab"))
    
     def listOfN4 =
+
       (string("ab")|string("cad")).listOfN(2).run("cadabab")
         == Right(List("cad", "ab"))
    
     def listOfN5 =
+
       (string("ab")|string("cad")).listOfN(1).run("ababab")
         == Right(List("ab"))
    
     def listOfNFail =
+
        (string("ab")|string("cad")).listOfN(3).run("ababxcad").isLeft
 
     // or laws
 
     def orLeft =
+
       string("abra").or(string("cadabra")).run("abra ") == Right("abra")
 
     def orRight =
+
       string("abra").or(string("cadabra")).run("cadabra") == Right("cadabra")
 
     def orFail = string("abra").or(string("cadabra")).run("blablab").isLeft 
@@ -167,6 +176,7 @@ trait Parsers[ParseError, Parser[+_]]:
       forAll { (s: String) => string("").run(s) == Right("") }
 
     def stringNegative =
+
       forAll { (s: String, t: String) =>
         !t.startsWith (s) ==> self.run (string (s)) (t).isLeft }
 
@@ -176,16 +186,16 @@ trait Parsers[ParseError, Parser[+_]]:
 
   extension [A](p1: Parser[A]) 
     def map2[B, C](p2: => Parser[B]) (f: (A, B) => C): Parser[C] =
-      ???
+      p1.flatMap { a => p2.map { b => f(a,b) } }
 
     def product[B] (p2: => Parser[B]): Parser[(A,B)] =
-      ???
+      p1.flatMap { a => p2.map { b => (a,b) } }
 
     // Write here: 
     //
-    // (1) ...
+    // (1) Type parameter A is not declared in map2 and product signatures because it's already declared in the extension method block [A](p1: Parser[A])
     //
-    // (2) ...
+    // (2) p2 is taken by-name (=>) to support recursive grammars - if it was by-value, recursive parsers would cause infinite recursion during construction
 
     def **[B](p2: => Parser[B]): Parser[(A, B)] = 
       p1.product(p2)
@@ -203,25 +213,25 @@ trait Parsers[ParseError, Parser[+_]]:
 
   extension [A](p: Parser[A]) 
     def many: Parser[List[A]] = 
-      ???
+      p.map2(p.many)(_ :: _) | succeed(List())
 
   // Exercise 3
 
   extension [A](p: Parser[A])
     def map[B](f: A => B): Parser[B] =
-      ???
+      p.flatMap(a => succeed(f(a)))
 
   // Exercise 4
 
   // A better name would be: howManyA
   def manyA: Parser[Int] =
-    ???
+    char('a').many.map(_.size)
 
   // Exercise 5
   
   extension [A](p: Parser[A]) 
     def many1: Parser[List[A]] =
-      ???
+      p.map2(p.many)(_ :: _)
       
   // Write here ...
 
@@ -229,12 +239,16 @@ trait Parsers[ParseError, Parser[+_]]:
 
   extension [A](p: Parser[A]) 
     def listOfN(n: Int): Parser[List[A]] =
-      ???
+      if n <= 0 then succeed(List())
+      else p.map2(listOfN(n-1))(_ :: _)
 
   // Exercise 7
 
   def digitTimesA: Parser[Int] =
-    ???
+    regex("[0-9]".r).flatMap { digit =>
+    val n = digit.toInt - '0'.toInt
+    char('a').listOfN(n).map(_ => n)
+    }
 
   // For Exercise 8 read the code below until you find it.
 
@@ -275,6 +289,7 @@ case class ParseError(stack: List[(Location, String)] = Nil):
     *          ^
     */
   override def toString =
+
     if stack.isEmpty then "no error message"
     else
       val collapsed = collapseStack(stack)
@@ -407,6 +422,7 @@ enum Result[+A]:
 end Result
 
 object Sliceable 
+
   extends Parsers[ParseError, Parser]:
   
   import Result.{Slice, Success, Failure}
@@ -414,8 +430,8 @@ object Sliceable
   // Exercise 8
 
   /** Consume no characters and succeed with the given value */
-  def succeed[A](a: A): Parser[A] =
-    ???
+  def succeed[A](a: A): Parser[A] = (s: ParseState) =>
+    Result.Success(a, 0)
 
   // For Exercise 9 continue reading below
 
@@ -475,13 +491,19 @@ object Sliceable
   // Exercise 9
  
   extension [A](p: Parser[A]) 
-    def or(p2: => Parser[A]): Parser[A] =
-      ???
+    def or(p2: => Parser[A]): Parser[A] = (s: ParseState) =>
+      p(s) match
+        case Failure(e, false) => p2(s)
+        case result => result
 
   // Exercise 10
 
   def regex(r: Regex): Parser[String] = (s: ParseState) =>
-    ???
+    r.findPrefixOf(s.input) match
+      case None => Failure(s.loc.toError(s"regex ${r}"), false)
+      case Some(matched) =>
+        if s.isSliced then Result.Slice(matched.length)
+        else Result.Success(matched, matched.length)
    
 end Sliceable
 
@@ -508,56 +530,83 @@ class JSONParser[ParseError, Parser[+_]](P: Parsers[ParseError,Parser]):
   // Exercise 11
 
   lazy val QUOTED: Parser[String] =
-    ???
+    regex("""\"[^"]*\"""".r).map(s => s.substring(1, s.length - 1))
 
   lazy val DOUBLE: Parser[Double] =
-    ???
+    regex("""[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?""".r).map(_.toDouble)
 
   lazy val ws: Parser[Unit] =
-    ???
+    regex("""\s+""".r).map(_ => ())
 
   // Exercise 13
   
   lazy val jnull: Parser[JSON] =
-    ???
+    string("null").map(_ => JNull)
 
   lazy val jbool: Parser[JSON] =
-    ???
+    (string("true") | string("false")).map(s => JBool(s == "true"))
 
   lazy val jstring: Parser[JString] =
-    ???
+    QUOTED.map(adpro.parsing.JSON.JString.apply)
 
   lazy val jnumber: Parser[JNumber] =
-    ??? 
+    DOUBLE.map(adpro.parsing.JSON.JNumber.apply)
 
   // Exercise 13
 
   private lazy val commaSeparatedVals: Parser[List[JSON]] =
-    ???
+    json.map2(char(',').flatMap(_ => json.many))(_ :: _) | succeed(List())
 
   lazy val jarray: Parser[JArray] =
-    ???
+    (for {
+      _ <- char('[')
+      _ <- ws.?
+      vals <- commaSeparatedVals | succeed(List())
+      _ <- ws.?
+      _ <- char(']')
+    } yield JArray(vals.toIndexedSeq))
 
   lazy val field: Parser[(String,JSON)] =
-    ???
+    for {
+      name <- QUOTED
+      _ <- char(':')
+      value <- json
+    } yield (name, value)
 
   private lazy val commaSeparatedFields: Parser[List[(String,JSON)]] =
-    ???
-
+    field.map2(char(',').flatMap(_ => field.many))(_ :: _) | succeed(List())
+  
   lazy val jobject: Parser[JObject] =
-    ???
+    (for {
+      _ <- char('{')
+      _ <- ws.?
+      fields <- commaSeparatedFields | succeed(List())
+      _ <- ws.?
+      _ <- char('}')
+    } yield JObject(fields.toMap))
 
   lazy val json: Parser[JSON] =
-    ???
-
+    (ws.?.flatMap(_ => 
+      jnull | jbool | jnumber | jstring | jarray | jobject
+    )).flatMap(result => 
+      ws.?.map(_ => result)
+    )
   // Exercise 14 (no code)
 
   // Exercise 15
   //
   // Write here:
   //
-  // (1) ...
+  // (1) It's possible to place the laws inside the abstract trait Parsers because they only depend on the abstract interface defined in the trait,
+  // not on any concrete implementation details.
   //
-  // (2) ...
+  // (2) 
+  /*
+    It ensures all implementations must satisfy these laws
+    The laws are type-checked against the abstract interface
+    It makes the contract explicit for implementers
+    Any implementation can reuse the same test cases without duplication
+    It enforces consistency across different implementations
+  */
 
 end JSONParser
