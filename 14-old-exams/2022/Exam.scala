@@ -81,8 +81,9 @@ object ExceptionalOptions:
    *
    * https://docs.scala-lang.org/scala3/book/fp-functional-error-handling.html */
 
-  def SafeTotal[A,B](f: A => B): A => Option[B] = ???
-
+  def SafeTotal[A,B](f: A => B): A => Option[B] = 
+    a => try Some(f(a)) catch case e: Throwable => None
+    
 
 
   /* Q2. (5%) Use `SafeTotal` to implement the `headOption` function for
@@ -90,7 +91,9 @@ object ExceptionalOptions:
    *
    * Notice that this question can be solved without answering Q1. */
 
-  def headOption[A](l: List[A]): Option[A] = ???
+  def headOption[A](l: List[A]): Option[A] = 
+    SafeTotal { (l: List[A]) => l.head } (l)
+
 
 end ExceptionalOptions
 
@@ -129,10 +132,18 @@ object PrimesAndLaziness:
    * - The first two prime numbers `p1`, `p2` that are 10 apart (p2 - p1 == 10)
    * - The second next pair `p3, p4` with the same property. */
 
-  def primesApart(n: Int): LazyList[(Int,Int)] = ???
+  def primesApart(n: Int): LazyList[(Int,Int)] = 
+    primes.zip(primes.drop(1)).filter { case (p1, p2) => p2 - p1 == n }
+  // Test values for prime pairs 10 apart
+  lazy val (p1, p2): (Int, Int) = primesApart(10).headOption.getOrElse((0,0))
+  lazy val (p3, p4): (Int, Int) = primesApart(10).drop(1).headOption.getOrElse((0,0))
 
-  lazy val (p1, p2): (Int, Int) = ???
-  lazy val (p3, p4): (Int, Int) = ???
+  // You can test these values by evaluating them:
+  def testPrimePairs(): Unit =
+    println(s"First pair of primes 10 apart: ($p1, $p2)")
+    println(s"Second pair of primes 10 apart: ($p3, $p4)")
+    println(s"Checking p2 - p1 = 10: ${p2 - p1 == 10}")
+    println(s"Checking p4 - p3 = 10: ${p4 - p3 == 10}")
 
 
   
@@ -141,9 +152,12 @@ object PrimesAndLaziness:
    * - Explain what would happen if these operators were strict instead. */
 
   // Write here ...
+  /* The lazy evaluation in this implementation allows us to work with potentially infinite
+   * sequences of primes without exhausting memory. When we call primesApart(10), we only compute
+   * the prime pairs we actually need, rather than attempting to generate all possible prime
+   * numbers first. Without laziness, the program would try to generate all primes before 
+   * finding any pairs, making it impossible to get a result in finite time and memory.*/
 
-
-  
   /* Q5 (10%) Write a property-based test checking that for all even numbers
    * `n` such that `n <= 20` the call `primesApart(n)` generates a lazy list
    * of pairs in which the elements in the first 5 pairs are apart by `n`.
@@ -154,8 +168,13 @@ object PrimesAndLaziness:
   class primesApartTest 
     extends org.scalacheck.Properties("primesApartTest"): 
 
+    import org.scalacheck.Gen
+
     property("Elements in pairs returned by primesApart differ by n") = 
-      ???
+      forAll(Gen.choose(2, 20).filter(_ % 2 == 0)) { n =>
+        val pairs = primesApart(n).take(5).toList
+        pairs.length == 5 && pairs.forall { case (p1, p2) => p2 - p1 == n }
+      }
 
   end primesApartTest
 
@@ -190,8 +209,16 @@ object ApplesToApples:
    * pickBetter can be used to pick a larger apple. */
 
   // Write here ... 
-
-  // assert(pickBetter(bigApple, smallApple) == bigApple)
+  /* The assertion doesn't compile because there's no instance of the Better typeclass for Apple.
+   * The pickBetter function requires an implicit Better[T] instance (shown by the context bound T: Better), 
+   * but we haven't defined how to compare Apples.
+  To make it compile, we need to define a Better instance for Apple that compares apples by weight.
+  */    
+  given Better[Apple] with
+    def leftBetter(left: Apple, right: Apple): Boolean = 
+      left.weight > right.weight
+    
+  assert(pickBetter(bigApple, smallApple) == bigApple)
 
 
 
@@ -204,7 +231,11 @@ object ApplesToApples:
    * make it possible just for the Apple type (it will give some points).
    */
 
-  // assert(bigApple betterThan smallApple)
+  extension [T: Better](left: T)
+    infix def betterThan(right: T): Boolean = 
+      summon[Better[T]].leftBetter(left, right)
+
+  assert(bigApple betterThan smallApple)
 
 end ApplesToApples
 
@@ -238,9 +269,9 @@ object SizedLists:
    * explicit type annotation for a list `l2` that contains three elements 
    * 3, 1, 4. */
 
-  val l1 = Cons(41, l0) 
+  val l1: SizedList[Int, Inc[Null]] = Cons(41, l0) 
  
-  val l2 = ???
+  val l2: SizedList[Int, Inc[Inc[Inc[Null]]]] = Cons(3, Cons(1, Cons(4, Empty)))
 
 
   
@@ -260,21 +291,29 @@ object SizedLists:
    * the third element in the list. The function should only be allowed to be 
    * called on a list containing at least three elements. */
 
-  // def third[A, S] ...
-
-
+  def third[A, S](l: SizedList[A, Inc[Inc[Inc[S]]]]): A = 
+    head(tail(tail(l)))
 
   /* Q10. (15%) Write a function `append` that adds an element to the end of the
    * List of type `Sized[A, S]` for any `A` and any `S`. Use recursion and respond to
    * the question in English below. */
 
-  // def append[ ... ](a: ..., l: ...): ... = ???
+  def append[A, S](a: A, l: SizedList[A, S]): SizedList[A, Inc[S]] = 
+    l match
+      case Empty => Cons(a, Empty)
+      case Cons(h, t) => Cons(h, append(a, t))
 
   /* Mark the polymorphically recursive call in your solution. Describe in
    * English what the type parameters are instantiated to in this call. */
 
   // Write here ... 
-
+  // The only call to append in the body is recursive and polymorphically
+  // recursive. It is difficult to name its type parameters, as there is no way
+  // to name them explicitly in the code---they are inferred by the type
+  // checker. The call is append[A, S2] where S2 is some type which has a
+  // property that Inc[S2] = S. Such a type exists in this case of pattern
+  // matching (but not in the otehr case), and I am somewhat impressed that
+  // Scala can infer that.
 
 
   /* Q11. (10%) Revisit the ADT definition of `SizedList` in the beginning of
@@ -289,5 +328,13 @@ object SizedLists:
    * parameter. */ 
 
   // Write here ...
- 
+  /* The type parameters in SizedList[+A, S]: A is covariant (marked with +), S is invariant (since no variance annotation)
+   * An example of correct type refinement would be SizedList[Int, Inc[Null]]
+   * is a subtype of SizedList[Any, Inc[Null]] (valid because A is covariant and Int is a subtype of Any)
+   * First incorrect example of type refinements would be: SizedList[Int, Inc[Null]]
+   * is not a subtype of SizedList[Int, Null] because S is invariant.
+   * Second incorrect example of type refinements would be: SizedList[String, Inc[Null]]
+   * is not a subtype of SizedList[Int, Inc[Null]] because A is covariant and String is not a subtype of Int.
+   */
+  
 end SizedLists
