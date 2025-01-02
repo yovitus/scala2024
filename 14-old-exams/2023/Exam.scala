@@ -73,7 +73,8 @@ object Streaming:
 
 
   def fViaFold (l: LazyList[Int]): Int = 
-    ???
+    l.foldLeft(0)((z,x) => if x % 2 == 1 then z + 1 else z)
+
 
 end Streaming
 
@@ -116,7 +117,7 @@ object Parsing:
       .map { (h,t) => h::t }
 
   lazy val longestLine: Parser[Int] = 
-    ???
+    parser.map { lines => lines.map(_.length).max }
 
 
   /* QUESTION 3 ######################################################
@@ -128,7 +129,7 @@ object Parsing:
    */
 
   val allLinesTheSame: Parser[Boolean] = 
-    ???
+    parser.map { lines => lines.map(_.length).toSet.size == 1 }
 
 end Parsing
 
@@ -137,6 +138,7 @@ end Parsing
 object Game:
 
   import pigaro.*
+
 
   /* QUESTION 4 ######################################################
    * Consider the old Chinese game of rock, paper, and scissors.  Two
@@ -181,10 +183,10 @@ object Game:
   type Strategy = Dist[Move]
 
   lazy val Alice: Strategy =
-    ???
+    Pigaro.uniform("alice")(Rock, Paper, Scissors)
 
   lazy val Bob: Strategy =
-    ???
+    Pigaro.uniform("bob")(Rock, Paper)
 
 
 
@@ -198,7 +200,8 @@ object Game:
    * Answering QUESTION 4 is not required to answer this one.
    */
   def game (player1: Strategy, player2: Strategy): Dist[Result] =
-    ???
+      player1.map2(player2)(winner)
+
 
 
 
@@ -215,7 +218,7 @@ object Game:
     = spire.random.rng.SecureJava.apply
 
   lazy val aliceFraction: Double = 
-    ???
+    game(Alice, Bob).sample(10000).pr(Some(P1))
 
 end Game
 
@@ -302,7 +305,9 @@ object RL:
      */
 
     property("00 Null update on null table 2x3") = 
-      ???
+      update(qZero(2, 3), 0, 0)(0.0, 0.0) == qZero(2, 3)
+
+      
 
 
 
@@ -321,7 +326,11 @@ object RL:
      */
 
     property("01 Null update on null table 2x3") = 
-      ???
+      forAllNoShrink(qGen(2, 3), Gen.choose(0, 1), Gen.choose(0, 2)) { (q, state, action) =>
+        val reward = q(state)(action)
+        val newQ = update(q, state, action)(reward, 0.0)
+        q == newQ
+      }
 
   end NullUpdatesSpec
 
@@ -355,6 +364,8 @@ object RL:
   
   def updateWithLens[State, Action] (q: Q[State, Action], s: State, a: Action)
     (reward: Double, estimate: Double): Q[State, Action] =
-    ???
-
+    val l = lens(s, a)
+    val qsa = l.getOption(q).getOrElse(0.0)  // Using getOption instead of get
+    val value = (1.0 - α) * qsa + α * (reward + γ * estimate)
+    l.replace(value)(q)
 end RL
